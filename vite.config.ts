@@ -4,6 +4,9 @@ import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 
 export default defineConfig({
+  build: {
+    outDir: 'dist-renderer',
+  },
   plugins: [
     react(),
     electron([
@@ -11,6 +14,13 @@ export default defineConfig({
         entry: 'electron/main.ts',
         onstart(args) {
           args.startup()
+        },
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ['font-list', 'uuid'],
+            },
+          },
         },
       },
       {

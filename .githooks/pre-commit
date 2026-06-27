@@ -1,0 +1,23 @@
+#!/bin/sh
+# Check that files which must not be committed are not staged
+
+FORBIDDEN_PATTERNS="^release/ ^release-download/"
+
+found=0
+for pattern in $FORBIDDEN_PATTERNS; do
+  matched=$(git diff --cached --name-only | grep "$pattern")
+  if [ -n "$matched" ]; then
+    echo "Error: The following files must not be committed:"
+    echo "$matched" | sed 's/^/  /'
+    found=1
+  fi
+done
+
+if [ "$found" -eq 1 ]; then
+  echo ""
+  echo "As noted in docs/RELEASE.md, these files must not be included in the repository."
+  echo "Run 'git restore --staged <file>' to unstage them."
+  exit 1
+fi
+
+exit 0

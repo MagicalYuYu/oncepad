@@ -1,6 +1,10 @@
 node_modules/
 dist/
+dist-build/
+dist-out/
 dist-electron/
+dist-renderer/
 *.local
 .DS_Store
 release/
+release-download/
