@@ -10,7 +10,7 @@
 
 按下全局快捷键唤出，输入文字，再按一次——内容已复制到剪贴板，随时粘贴到任何地方。
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.1.2-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)
 ![Languages](https://img.shields.io/badge/i18n-11%20languages-blueviolet?style=flat-square)

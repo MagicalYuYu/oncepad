@@ -10,7 +10,7 @@
 
 Press a global shortcut to summon it, type your text, press again — and it's already on your clipboard, ready to paste anywhere.
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.1.2-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)
 ![Languages](https://img.shields.io/badge/i18n-11%20languages-blueviolet?style=flat-square)

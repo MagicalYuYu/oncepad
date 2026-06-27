@@ -1697,7 +1697,8 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('set-language', (_event, language: string) => {
-    if (typeof language !== 'string' || !['zh-CN', 'en'].includes(language)) return false
+    const VALID_LANGUAGES = ['zh-CN', 'zh-TW', 'en', 'ja', 'ko', 'de', 'fr', 'es', 'pt-BR', 'ru', 'it']
+    if (typeof language !== 'string' || !VALID_LANGUAGES.includes(language)) return false
     const config = loadConfig()
     config.language = language
     saveConfig(config)
@@ -1793,6 +1794,17 @@ app.whenReady().then(() => {
   ipcMain.handle('save-note', (_event, note: Note) => {
     saveNote(note)
     return loadNoteIndex()
+  })
+
+  // v1.1.2 修复 Bug S-1：同步保存笔记（beforeunload 场景使用，避免异步保存未完成窗口已关闭）
+  ipcMain.on('save-note-sync', (event, note: Note) => {
+    try {
+      saveNote(note)
+      event.returnValue = true
+    } catch (err) {
+      writeErrorLog('ERROR', `save-note-sync failed: ${err}`)
+      event.returnValue = false
+    }
   })
 
   // 删除笔记，返回更新后的 NoteIndexEntry[]

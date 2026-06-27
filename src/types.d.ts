@@ -182,6 +182,8 @@ export interface ElectronAPI {
   getNotes: (query?: NoteQuery) => Promise<NoteIndexEntry[]>
   getNote: (id: string) => Promise<Note | null>
   saveNote: (note: Note) => Promise<NoteIndexEntry[]>
+  // v1.1.2 修复 Bug S-1：同步保存笔记（beforeunload 场景使用）
+  saveNoteSync: (note: Note) => boolean
   deleteNote: (id: string) => Promise<NoteIndexEntry[]>
   pinNote: (id: string) => Promise<Note | null>
   setNotePinned: (id: string, pinned: boolean) => Promise<NoteIndexEntry[]>

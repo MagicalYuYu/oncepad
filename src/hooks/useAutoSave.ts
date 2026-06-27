@@ -57,14 +57,14 @@ export function useAutoSave({
   }, [text, fileInfo, saveCurrentNote])
 
   // === 关闭前强制保存：监听窗口 beforeunload，同步保存当前笔记 ===
-  // 注意：beforeunload 在 Electron 中关闭窗口时触发，此时需要同步保存
+  // v1.1.2 修复 Bug S-1：使用 sendSync 同步保存，确保窗口关闭前数据已写入磁盘
   useEffect(() => {
     const handleBeforeUnload = () => {
       // 文件模式下不保存为笔记
       if (fileInfo) return
       // 无内容不保存
       if (!text.trim()) return
-      // 同步保存：使用 IPC 同步调用（避免异步未完成窗口已关闭）
+      // 同步保存：使用 IPC sendSync 调用（阻塞直到主进程完成写入）
       try {
         const trimmed = text.trim()
         if (!trimmed) return
@@ -78,7 +78,7 @@ export function useAutoSave({
             content: text,
             updatedAt: now.toISOString(),
           }
-          window.electronAPI.saveNote(updated)
+          window.electronAPI.saveNoteSync(updated)
         } else {
           const newNote: Note = {
             id: crypto.randomUUID(),
@@ -93,7 +93,7 @@ export function useAutoSave({
             expiresAt: new Date(now.getTime() + DRAFT_TTL_MS).toISOString(),
             format: editorFormat,
           }
-          window.electronAPI.saveNote(newNote)
+          window.electronAPI.saveNoteSync(newNote)
         }
       } catch {}
     }

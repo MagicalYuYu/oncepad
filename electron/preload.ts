@@ -27,6 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getNotes: (query?: NoteQuery) => ipcRenderer.invoke('get-notes', query),
   getNote: (id: string) => ipcRenderer.invoke('get-note', id),
   saveNote: (note: Note) => ipcRenderer.invoke('save-note', note),
+  // v1.1.2 修复 Bug S-1：同步保存笔记（beforeunload 场景使用）
+  saveNoteSync: (note: Note) => ipcRenderer.sendSync('save-note-sync', note),
   deleteNote: (id: string) => ipcRenderer.invoke('delete-note', id),
   pinNote: (id: string) => ipcRenderer.invoke('pin-note', id),
   setNotePinned: (id: string, pinned: boolean) => ipcRenderer.invoke('set-note-pinned', id, pinned),

@@ -360,8 +360,10 @@ function App() {
     }
   }, [text])
 
-  // 调试：定期检查标题栏状态（每3秒），始终运行（不依赖 debugMode）
+  // 调试：定期检查标题栏状态（每3秒）
+  // v1.1.2 修复 Bug M-4：用 debugMode 包裹，生产环境不运行（避免每3秒 DOM 测量 + IPC 写入）
   useEffect(() => {
+    if (!debugMode) return
     const interval = setInterval(() => {
       const titlebar = document.querySelector('.titlebar') as HTMLElement
       if (!titlebar) {
@@ -381,7 +383,7 @@ function App() {
       debugLog(`PERIODIC: editorMode=${editorMode} titlebar.h=${titlebar.offsetHeight} top=${rect.top} display=${computedStyle.display} visibility=${computedStyle.visibility} opacity=${computedStyle.opacity} zIndex=${computedStyle.zIndex} bgColor=${computedStyle.backgroundColor} topElement=${topElementInfo} covered=${isCovered}`)
     }, 3000)
     return () => clearInterval(interval)
-  }, [editorMode])
+  }, [editorMode, debugMode])
 
   // === 跟踪光标行号（用于模式切换时定位） ===
   const updateCursorLine = useCallback(() => {
@@ -1400,6 +1402,10 @@ function App() {
       const result = await window.electronAPI.saveFile(fileInfo.filePath, text)
       if (result.success) {
         setLastSavedText(text)
+      } else {
+        // v1.1.2 修复 Bug S-3：保存失败时中止后续动作，避免数据丢失
+        alert(`保存失败：${result.error || '未知错误'}`)
+        return
       }
     }
     const action = pendingActionRef.current
@@ -2143,6 +2149,7 @@ function App() {
           enableSequenceSuggestion={enableSequenceSuggestion}
           seqAcceptOnTab={seqAcceptOnTab}
           seqAcceptOnEnter={seqAcceptOnEnter}
+          debugMode={debugMode}
         />
 
         {/* 笔记面板 — 拆分为独立组件 NotesPanel，所有 state/handlers 通过 props 传入 */}

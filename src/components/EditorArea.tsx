@@ -57,6 +57,8 @@ interface EditorAreaProps {
   onJumpToLine: (line: number) => void
   // Toast 反馈
   toastMessage: string | null
+  // v1.1.2 修复 Bug M-5：minimap 诊断日志受 debugMode 控制，生产环境不写入
+  debugMode: boolean
 }
 
 export function EditorArea(props: EditorAreaProps) {
@@ -92,6 +94,7 @@ export function EditorArea(props: EditorAreaProps) {
     onUpdateCursorLine,
     onToggleEditorMode,
     onJumpToLine,
+    debugMode,
   } = props
 
   // 行号栏 ref：用于与 textarea 同步滚动
@@ -500,7 +503,9 @@ export function EditorArea(props: EditorAreaProps) {
   // ===== minimap 调试日志（实时写入 %APPDATA%/OncePad/debug.log）=====
   // 用于排查视口指示器位置 bug，记录运行时数值供分析
   // 调试完成后可整体移除
+  // v1.1.2 修复 Bug M-5：受 debugMode 控制，生产环境不写入（避免每次滚动触发 IPC）
   const logMinimap = (label: string, data: Record<string, unknown>) => {
+    if (!debugMode) return
     try {
       const msg = `[minimap] ${label} ${JSON.stringify(data)}`
       // fire-and-forget，不阻塞交互
@@ -570,7 +575,9 @@ export function EditorArea(props: EditorAreaProps) {
 
   // 诊断：minimapViewport 变化后，读取 viewport 指示器的实际渲染位置
   // 用于对比"预期百分比位置"和"实际像素位置"，定位 CSS 渲染偏差
+  // v1.1.2 修复 Bug M-5：受 debugMode 控制，生产环境跳过（避免每次滚动做 Range 测量）
   useEffect(() => {
+    if (!debugMode) return
     const viewport = minimapViewportRef.current
     const content = minimapContentRef.current
     const container = content?.parentElement
@@ -645,7 +652,7 @@ export function EditorArea(props: EditorAreaProps) {
         })
       }
     }
-  }, [minimapViewport])
+  }, [minimapViewport, debugMode])
 
   // 统一行号列表：根据 lineNumberMode 生成对应的行号数据
   // 实现原理：使用隐藏的 mirror div，与 textarea 相同样式，逐行测量 scrollHeight 计算视觉行数
