@@ -10,7 +10,7 @@
 
 按下全局快捷键唤出，输入文字，再按一次——内容已复制到剪贴板，随时粘贴到任何地方。
 
-[🌐 官网](https://oncepad.magicalyu.online/)
+[🌐 官网](https://oncepad.magicalyu.online/) · [📥 下载](https://github.com/MagicalYuYu/OncePad/releases) · [🚀 功能](#它能做什么)
 
 ![Version](https://img.shields.io/badge/version-1.1.3-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)

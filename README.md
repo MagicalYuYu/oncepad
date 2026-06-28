@@ -10,7 +10,7 @@
 
 Press a global shortcut to summon it, type your text, press again — and it's already on your clipboard, ready to paste anywhere.
 
-[🌐 Website](https://oncepad.magicalyu.online/)
+[🌐 Website](https://oncepad.magicalyu.online/) · [📥 Download](https://github.com/MagicalYuYu/OncePad/releases) · [🚀 Features](#what-it-does)
 
 ![Version](https://img.shields.io/badge/version-1.1.3-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)
