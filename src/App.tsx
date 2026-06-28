@@ -507,7 +507,11 @@ function App() {
   })
 
   const handleNew = useCallback(async () => {
-    await saveCurrentNote()
+    // v1.1.3 修复：文件模式下不新建草稿（避免把文件内容误存为笔记）
+    // 只有笔记模式下才调用 saveCurrentNote 保存当前笔记
+    if (!fileInfo) {
+      await saveCurrentNote()
+    }
     setText('')
     setCurrentNote(null)
     setCurrentNoteId(null)
@@ -515,7 +519,7 @@ function App() {
     setEditorMode('code')
     setFileInfo(null) // 清除文件模式
     textareaRef.current?.focus()
-  }, [saveCurrentNote])
+  }, [saveCurrentNote, fileInfo])
 
   const handleCopy = useCallback(async () => {
     if (!text.trim()) return
@@ -531,8 +535,11 @@ function App() {
 
   // === 选中笔记：加载完整内容到编辑区 ===
   const handleSelectNote = useCallback(async (id: string) => {
-    // 若当前正在编辑已有笔记，先保存更新
-    await saveCurrentNote()
+    // v1.1.3 修复：文件模式下不调用 saveCurrentNote（避免把文件内容误存为草稿）
+    // 只有笔记模式下才保存当前笔记
+    if (!fileInfo) {
+      await saveCurrentNote()
+    }
     const note = await window.electronAPI.getNote(id)
     if (note) {
       setText(note.content)
@@ -553,7 +560,7 @@ function App() {
         }
       }, 0)
     }
-  }, [saveCurrentNote])
+  }, [saveCurrentNote, fileInfo])
 
   // === 删除笔记 ===
   const handleDeleteNote = useCallback(async (id: string, e: React.MouseEvent) => {
@@ -1365,22 +1372,34 @@ function App() {
   // v1.1.0：文件是否已修改（dirty 状态检测）
   const isFileDirty = fileInfo && text !== lastSavedText
 
-  // v1.1.0：检查未保存修改并执行动作，若有未保存修改则弹出对话框
+  // v1.1.3 修复 Bug 2：检查未保存修改并执行动作
+  // 设计原则：笔记模式（草稿/收藏）永远实时保存，不弹窗、不丢弃
+  // - 文件模式（fileInfo 存在）且有修改：弹窗询问是否保存文件
+  // - 笔记模式（fileInfo 为空）且有修改：自动保存笔记后执行 action（不弹窗）
+  // - 无修改：直接执行 action
   const checkUnsavedAndExecute = useCallback((action: () => void) => {
-    if (isFileDirty) {
+    if (fileInfo && isFileDirty) {
+      // 文件模式且有修改：弹窗询问是否保存文件
       pendingActionRef.current = action
       setShowUnsavedDialog(true)
+    } else if (!fileInfo && currentNote && text !== currentNote.content) {
+      // 笔记模式且有修改：自动保存笔记（不弹窗，不丢弃）
+      saveCurrentNote().then(() => action())
     } else {
       action()
     }
-  }, [isFileDirty])
+  }, [fileInfo, isFileDirty, currentNote, text, saveCurrentNote])
 
   // v1.1.1：在已有窗口中加载外部文件（双击文件复用窗口场景）
   // 主进程 second-instance 事件中，优先复用已有窗口而非创建新窗口，减少 Electron 进程启动开销
+  // v1.1.3 修复 Bug 2/5：清除 currentNote/currentNoteId，避免后续自动保存覆盖旧笔记
   const loadFileFromExternal = useCallback((filePath: string) => {
     checkUnsavedAndExecute(async () => {
       const result = await window.electronAPI.openFile(filePath)
       if (result) {
+        // 清除笔记关联，避免后续自动保存用文件内容覆盖旧笔记
+        setCurrentNote(null)
+        setCurrentNoteId(null)
         setText(result.content)
         // 根据文件后缀名判断格式（md/markdown 为 MD 格式，其他为纯文本）
         const ext = result.fileName.toLowerCase().match(/\.([^.]+)$/)?.[1] || ''
@@ -1396,6 +1415,10 @@ function App() {
   }, [checkUnsavedAndExecute])
 
   // v1.1.0：未保存对话框 - 保存
+  // v1.1.3 修复 Bug 2：区分文件模式和笔记模式
+  // - 文件模式：保存到文件
+  // - 笔记模式：保存到笔记数据库（理论上不会走到这里，因为 checkUnsavedAndExecute 会自动保存笔记）
+  //   但作为防御性代码保留，避免边界情况下数据丢失
   const handleUnsavedDialogSave = useCallback(async () => {
     setShowUnsavedDialog(false)
     if (fileInfo) {
@@ -1407,11 +1430,14 @@ function App() {
         alert(`保存失败：${result.error || '未知错误'}`)
         return
       }
+    } else if (currentNote || text.trim()) {
+      // 笔记模式：保存到笔记数据库
+      await saveCurrentNote()
     }
     const action = pendingActionRef.current
     pendingActionRef.current = null
     if (action) action()
-  }, [fileInfo, text])
+  }, [fileInfo, text, currentNote, saveCurrentNote])
 
   // v1.1.0：未保存对话框 - 不保存
   const handleUnsavedDialogDiscard = useCallback(() => {
@@ -1539,6 +1565,7 @@ function App() {
 
   // === 拖拽文件打开：v1.1.0 扩展，支持拖拽任意文本文件到编辑器区域打开 ===
   // 后缀名未收录时，由主进程 validateFilePath 检测内容是否为纯文本
+  // v1.1.3 修复 Bug 2：统一使用 checkUnsavedAndExecute，确保笔记模式下自动保存当前笔记
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -1548,25 +1575,26 @@ function App() {
     // Electron 中 File 对象的 path 属性包含文件系统路径
     const filePath = (file as File & { path?: string }).path
     if (!filePath) return
-    const result = await window.electronAPI.openFile(filePath)
-    if (result) {
-      // 拖拽打开文件是独立的新内容，必须清除当前笔记关联
-      // 否则后续 saveCurrentNote 会用文件内容覆盖旧笔记（type='pin' 时表现为"自动归入收藏"）
-      setCurrentNote(null)
-      setCurrentNoteId(null)
-      setText(result.content)
-      // v1.1.0：根据文件后缀名判断格式（md/markdown 为 MD 格式，其他为纯文本）
-      const ext = result.fileName.toLowerCase().match(/\.([^.]+)$/)?.[1] || ''
-      const isMd = ext === 'md' || ext === 'markdown'
-      setEditorFormat(isMd ? 'md' : 'plain')
-      // v1.1.0：MD 文件默认浏览模式，其他格式默认编辑模式
-      setEditorMode(isMd ? 'preview' : 'code')
-      setFileInfo({ filePath: result.filePath, fileName: result.fileName })
-      // v1.1.0：记录已保存内容 + 同步主进程窗口文件状态
-      setLastSavedText(result.content)
-      window.electronAPI.setWindowFile(result.filePath)
-    }
-  }, [])
+    checkUnsavedAndExecute(async () => {
+      const result = await window.electronAPI.openFile(filePath)
+      if (result) {
+        // 清除笔记关联，避免后续自动保存用文件内容覆盖旧笔记
+        setCurrentNote(null)
+        setCurrentNoteId(null)
+        setText(result.content)
+        // v1.1.0：根据文件后缀名判断格式（md/markdown 为 MD 格式，其他为纯文本）
+        const ext = result.fileName.toLowerCase().match(/\.([^.]+)$/)?.[1] || ''
+        const isMd = ext === 'md' || ext === 'markdown'
+        setEditorFormat(isMd ? 'md' : 'plain')
+        // v1.1.0：MD 文件默认浏览模式，其他格式默认编辑模式
+        setEditorMode(isMd ? 'preview' : 'code')
+        setFileInfo({ filePath: result.filePath, fileName: result.fileName })
+        // v1.1.0：记录已保存内容 + 同步主进程窗口文件状态
+        setLastSavedText(result.content)
+        window.electronAPI.setWindowFile(result.filePath)
+      }
+    })
+  }, [checkUnsavedAndExecute])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     // 必须 preventDefault 才能触发 drop 事件
@@ -1586,12 +1614,14 @@ function App() {
     }
     if (e.key === 's' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
       e.preventDefault()
-      // v1.1.1 修复 Bug 2：文件模式保存到原文件；无文件时触发"另存为"对话框
-      // 原行为是无文件时调用 saveCurrentNote()，但用户用软件打开新 TXT 后期望 Ctrl+S 保存到文件
+      // v1.1.3 修复 Bug 3：笔记模式（草稿/收藏）Ctrl+S 保存到笔记数据库，不弹出文件保存框
+      // 文件模式 Ctrl+S 保存到原文件
       if (fileInfo) {
         handleSaveToFile()
       } else {
-        handleSaveAs()
+        saveCurrentNote()
+        setToastMessage(t('editor.saved'))
+        safeTimeout(() => { setToastMessage(null) }, 1500)
       }
       return
     }
