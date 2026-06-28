@@ -9,6 +9,7 @@
 **A lightweight, instant-access scratchpad — from quick snippets to AI prompts, every piece of scattered text finds its place.**
 
 Press a global shortcut to summon it, type your text, press again — and it's already on your clipboard, ready to paste anywhere.
+🌐 Website: https://oncepad.magicalyu.online/
 
 ![Version](https://img.shields.io/badge/version-1.1.3-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)
@@ -38,11 +39,7 @@ Press a global shortcut to summon it, type your text, press again — and it's a
 - 📄 **Broad format support** — Opens any plain-text file, even with uncommon extensions (content-aware detection)
 - 👁️ **MD preview by default** — Markdown files open in reading mode; other formats open in edit mode
 - 💾 **Save feedback** — Visual toast confirmation on successful save (Ctrl+S)
-- 🚪 **Reliable close** — Force-close mechanism prevents freeze when closing Markdown files
-- ⚡ **Fast file opening** — Reuses existing window when double-clicking files in Explorer (no new process overhead)
-- 📋 **Error logging** — Crash and freeze logs stored at a fixed path, accessible from Settings → Management → Advanced
 - 🔗 **Broad file associations** — Registers as default editor for 40+ file types (.md / .txt / .js / .py / .json / .csv / .sh / .html / .css / ...)
-- ℹ️ **About dialog** — View app version and system info, with quick link to GitHub repository
 - 🌐 **11 languages** — 简体中文 / 繁體中文 / English / 日本語 / 한국어 / Deutsch / Français / Español / Português (Brasil) / Русский / Italiano
 - 🎛️ **Navbar customization** — Show/hide titlebar buttons (pin, color, new, copy, notes)
 - 🔤 **Font customization** — Separate English/Chinese fonts, adjustable size, line height, and padding
